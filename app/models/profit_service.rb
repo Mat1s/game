@@ -1,0 +1,2 @@
+class ProfitService < ApplicationRecord
+end

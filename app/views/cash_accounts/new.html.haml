@@ -1,0 +1,13 @@
+%h1 Form for create cash cash_account
+= form_for @cash_account do |f|
+  = hidden_field_tag :user_id, current_user.id
+
+  =f.select 'currency', options_from_collection_for_select(@type_currency, 'name', 'full_name')
+  %br
+  =f.label :total
+  =f.number_field :total, step: 'any', require: true
+  %br
+
+  =f.submit 'Create new cash_account'
+
+  

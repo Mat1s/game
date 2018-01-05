@@ -1,0 +1,7 @@
+- @cash_accounts.each do |ca|
+	%br
+	= ca.currency 
+	%br
+	= ca.total
+	%br
+	= link_to "Add more money :)", edit_cash_account_path(ca.id)

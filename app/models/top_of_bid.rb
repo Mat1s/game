@@ -1,0 +1,2 @@
+class TopOfBid < ApplicationRecord
+end

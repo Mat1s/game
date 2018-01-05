@@ -1,0 +1,9 @@
+= @cash_account.currency
+= form_for @cash_account do |f|
+  = hidden_field_tag :user_id, current_user.id
+
+  =f.label :total
+  =f.number_field :total, step: 'any', min: "#{@cash_account.total}", require: true
+  %br
+
+  =f.submit 'Update current cash_account'
