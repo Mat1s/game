@@ -3,7 +3,7 @@
 	=hidden_field_tag :user_id, current_user.id
 
 	=f.label :currency
-	=f.select 'currency', options_from_collection_for_select(@cash_accounts_u, 'currency', 'full_name')
+	=f.select :currency, options_from_collection_for_select(@cash_accounts_u, :currency, :full_name)
 
 	=f.label :bid
 	=f.number_field :bid, require: true, min: 0, step: :any

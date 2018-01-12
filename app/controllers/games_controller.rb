@@ -16,7 +16,10 @@ class GamesController < ApplicationController
   end
 
   def new
-  	@game = Game.new
+  	@game = current_user.games.new
+  	@cash_accounts_u = current_user.cash_accounts.
+  		select('cash_accounts.user_id, cash_accounts.currency currency, currencies.full_name full_name').
+  		joins('left join currencies on cash_accounts.currency = currencies.name')
   end
 
   def sheduler
@@ -32,15 +35,17 @@ class GamesController < ApplicationController
 		
 		if current_user.games.create(bid: params[:game][:bid], profit: @profit, currency: params[:game][:currency],
 			user_id: params[:user_id])
-			flash[:success] = "Your profit is #{@profit}"
-			redirect_to games_path
+			flash.now[:success] = "Your profit is #{@profit}"
 		else
-			flash[:alert] = "Not acceptable params"
-			redirect_to games_path
+			flash.now[:alert] = "Not acceptable params"
 		end
 	end
 
   private 
+ 
+ 	def permit_params
+  	params.require(:game).permit(:currency, :user_id, :bid)
+  end
 
   def check_user_of_black_list
   	path = "https://www.random.org/integers/?num=1&min=0&max=500&col=1&base=10&format=plain&rnd=new"
@@ -50,21 +55,17 @@ class GamesController < ApplicationController
   	end
   end
 
-  def profit_of_service
-  	ProfitOfDayWorker.perform_async(params[:game][:currency], params[:game][:bid], @profit, current_user.id)
-  end
-  	
   def correct_money
   	current_account = CashAccount.find_by(user_id: current_user.id, currency: params[:game][:currency])
   	total = current_account.total
   	period = Time.now - 1.day
   	profit_of_service = 0.5*(ProfitService.where("created_at > :period", period: period).sum(:profit_from_game))
-  	if params[:game][:bid].to_d > current_account.total
-  		redirect_to games_path, alert: "Your bid must be less than #{total}"
-  		return
+  	if params[:game][:bid].to_d > total
+  		render @games, alert: "Your bid must be less than #{total} #{params[:game][:currency]}"
+  		current_account.lock_version = 0
   	elsif params[:game][:bid].to_d > profit_of_service
-  		redirect_to games_path, alert: "Your bid must be less than #{profit_of_service}"
-  		return
+  		render @games, alert: "Your bid must be less than #{profit_of_service} Euro"
+  		current_account.lock_version = 0
   	end
 		logger.debug "Current account is: #{current_account.inspect}"
   	yield  	
@@ -72,7 +73,7 @@ class GamesController < ApplicationController
  		current_account.update(total: total_after_bid)  
   end
 
-  def permit_params
-  	params.require(:game).permit(:currency, :user_id, :bid)
+  def profit_of_service
+  	ProfitOfDayWorker.perform_async(params[:game][:currency], params[:game][:bid], @profit, current_user.id)
   end
 end
